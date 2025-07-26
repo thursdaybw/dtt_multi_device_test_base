@@ -11,6 +11,6 @@
     "psr-4": {
       "thursdaybw\\DttMultiDeviceTestBase\\": "src/"
     }
-  }, 
+  } 
 }
 
