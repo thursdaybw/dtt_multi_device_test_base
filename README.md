@@ -1,4 +1,4 @@
-# 🧪 dtt_multi_device_test_base
+# 🧪 DTT Multi Device Test Base
 
 Reusable base classes for running **Drupal Test Traits (DTT)** tests in **multiple browser/device contexts** — such as desktop, mobile, tablet, or anything Selenium supports.
 
