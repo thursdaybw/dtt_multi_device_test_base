@@ -7,10 +7,10 @@
     "php": ">=8.1",
     "weitzman/drupal-test-traits": "^2.6"
   },
-  "autoload": {
+   "autoload": {
     "psr-4": {
-      "Drupal\\Tests\\dtt_multi_device_test_base\\": "tests/src/"
+      "thursdaybw\\DttMultiDeviceTestBase\\": "src/"
     }
-  }
+  }, 
 }
 
