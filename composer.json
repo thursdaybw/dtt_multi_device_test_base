@@ -11,6 +11,8 @@
     "psr-4": {
       "thursdaybw\\DttMultiDeviceTestBase\\": "src/"
     }
-  } 
+  }, 
+  "require-dev": {},
+  "minimum-stability": "dev",
+  "prefer-stable": true
 }
-
