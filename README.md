@@ -66,21 +66,32 @@ They are different tests with different expectations. Running the same class in 
 Install as a custom Drupal module (in `modules/custom` or `modules/contrib`):
 
 
-## Configuration
+Here's a clearer, more structured rewrite of the **Configuration** section for your README:
 
-You must define an environment variable to point to your device profile YAML file:
+---
 
-<!-- Inside your phpunit.dtt.xml -->
+## ⚙️ Configuration
+
+This module assumes you're already using [Drupal Test Traits (DTT)](https://github.com/weitzman/drupal-test-traits) and have it fully configured.
+
+### 1. Set the Device Profile YAML Path
+
+In your `phpunit.xml` (usually in your project root), define the path to your device profile YAML:
+
+```xml
 <php>
   <env name="DTT_DEVICE_PROFILE_YAML" value="/full/path/to/dtt_device_profiles.yaml"/>
 </php>
+```
 
-✅ Recommended: Use a full absolute path to avoid inconsistencies across CI, IDEs, shells, and PHPUnit runners.
+✅ **Recommended:** Use a **full absolute path**
+Relative paths are unreliable due to quirks in PHPUnit’s working directory (`getcwd()`) and may break depending on how tests are invoked (e.g. via IDE, shell, or CI).
 
-While the library attempts to resolve relative paths as if they’re anchored to the project root, this behavior depends on how PHPUnit is executed and may break in some environments (e.g., getcwd() shifting unpredictably).
-Your mileage may vary.
+---
 
-This file should live in your project root (where phpunit.dtt.xml and composer.json are located), with contents like:
+### 2. Create Your Device Profile YAML File
+
+Place your `dtt_device_profiles.yaml` in the project root (alongside `phpunit.xml` and `composer.json`). Example:
 
 ```yaml
 small_mobile:
@@ -97,22 +108,27 @@ desktop:
   - "http://selenium-chrome:4444/wd/hub"
 ```
 
-✅ The base class resolves this path relative to the project root, using a getcwd() + '..' trick to sidestep quirks introduced by test runners that change working directory.
+✅ A fallback file (`device_profiles.default.yaml`) is bundled in this repo, but it’s not maintained.
+Copy and customize your own YAML config.
 
-Notes
+---
 
-    A fallback file (device_profiles.default.yaml) is bundled in this module but not maintained. Copy it and customize your own.
+### 3. Ensure You're Using DTT's `bootstrap.php`
 
-    This setup requires you to use bootstrap.php (not bootstrap-fast.php) in your phpunit.dtt.xml to ensure custom base classes load.
+You **must use DTT’s full bootstrap**, *not* `bootstrap-fast.php`, in your `phpunit.dtt.xml`:
 
-    If your tests aren't being picked up, double-check:
+```xml
+<phpunit bootstrap="vendor/weitzman/drupal-test-traits/src/bootstrap.php">
+```
 
-        Your base class file is in tests/src/.../Base/
+🚫 `bootstrap-fast.php` is faster but skips full autoloading, which will break test class discovery for this module.
 
-        You're not using the fast bootstrap file
+⚠️ bootstrap-fast.php may work but autoloading with boostrap-fast.php is untested.
+---
 
-⚠️ You probably need to use DTT's bootstrap.php, not bootstrap-fast.php, in your phpunit.xml, so that test classes in this module (under tests/src) are autoloaded.
-Autoloading with boostrap-fast.php is untested.
+## 🧩 Dependencies
+
+You **must onfigure [weitzman/drupal-test-traits](https://github.com/weitzman/drupal-test-traits)** for this module to function.
 
 ## Usage
 
