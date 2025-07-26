@@ -1,0 +1,17 @@
+{
+  "name": "drupal/dtt_multi_device_test_base",
+  "description": "Reusable base classes for running Drupal Test Traits (DTT) tests in multiple browser/device contexts — such as desktop, mobile, tablet, or anything Selenium supports.",
+  "type": "drupal-module",
+  "license": "GPL-2.0-or-later",
+  "minimum-stability": "stable",
+  "require": {
+    "php": ">=8.1",
+    "weitzman/drupal-test-traits": "^1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Drupal\\Tests\\dtt_multi_device_test_base\\": "tests/src/"
+    }
+  }
+}
+
