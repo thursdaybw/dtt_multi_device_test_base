@@ -17,6 +17,51 @@ abstract class DeviceProfileTestBase extends ExistingSiteSelenium2DriverTestBase
   /** @var \Behat\Mink\Session */
   protected $session;
 
+  /**
+   * Set up the test environment using a custom device profile.
+   *
+   * This method overrides the base setUp to inject a device-specific WebDriver
+   * configuration into the DTT (Drupal Test Traits) stack before the session is created.
+   *
+   * It:
+   * - Retrieves the desired device profile key (e.g., 'small_mobile') from the test class.
+   * - Resolves the full device profile configuration from the YAML file path, which may
+   *   come from the environment or default to the project's test resources.
+   * - Sets the DTT_MINK_DRIVER_ARGS environment variable dynamically, allowing DTT's
+   *   internal `getDriverInstance()` logic to use the correct Chrome emulation options.
+   * - Finally, calls the parent setUp, which initializes the Mink session using the
+   *   injected driver arguments, ensuring that all DTT features like `assertSession()`,
+   *   `createUser()`, and `drupalLogin()` work correctly without further hacks.
+   *
+   * The order is critical:
+   * - putenv() must be called *before* parent::setUp() to ensure DTT builds the driver
+   *   using the desired profile.
+   * - $this->driver is then assigned manually using getDriverInstance() so typed access
+   *   to $this->driver in the base class doesn't cause a fatal error.
+   */
+  protected function setUp(): void {
+      // Retrieve the device profile key from the test class (e.g. 'small_mobile').
+      $profile = $this->getDeviceProfileKey();
+      $yamlPath = $this->getDeviceProfilesPath(); // ← reuse the same logic
+
+      // Parse the YAML and extract the requested profile config.
+      $raw = file_get_contents($yamlPath);
+      $profiles = \Symfony\Component\Yaml\Yaml::parse($raw);
+
+      if (empty($profiles[$profile])) {
+          throw new \RuntimeException("No profile '$profile' in $yamlPath");
+      }
+
+      // Set the env var DTT expects before it builds the driver.
+      putenv('DTT_MINK_DRIVER_ARGS=' . json_encode($profiles[$profile]));
+
+      // Let DTT initialize the Mink session using the driver created from our config.
+      parent::setUp();
+
+      // Ensure $this->driver (typed property in ExistingSiteBase) is initialized.
+      $this->driver = $this->getDriverInstance();
+  }
+
   protected function getDriverInstance(): DriverInterface {
     $profile = $this->getDeviceProfileKey();
     $path = $this->getDeviceProfilesPath();
