@@ -1,9 +1,18 @@
 # 🧪 DTT Multi Device Test Base
 
-Reusable base classes for running **Drupal Test Traits (DTT)** tests in **multiple browser/device contexts** — such as desktop, mobile, tablet, or anything Selenium supports.
+Reusable **base classes** for running [**Drupal Test Traits (DTT)**](https://github.com/weitzman/drupal-test-traits) tests in **multiple browser/device contexts** — such as desktop, mobile, tablet, or anything Selenium supports.
 
-This module enables **per-test-class device profiles**, using custom base classes that read from a YAML config and spawn a Mink session accordingly.
-It lets you assert responsive behavior directly within PHPUnit.
+This package lets each PHPUnit test class declare its own use of a **device profile** defined in a shared yaml file.
+
+It enables enabling true per-test responsive assertions like:
+
+
+```php
+class HomepageMobileTest extends MobileTestBase {}
+class HomepageDesktopTest extends DesktopTestBase {}
+```
+
+✅ Works even in a single test run — no need for multiple configs or CI matrix gymnastics.
 
 It fills a gap that cannot be solved by multiple PHPUnit configs or CI matrix runs alone.
 
@@ -19,34 +28,41 @@ This gives you:
 
 ## Features
 
+- `DeviceProfileTestBase` class:
+  - Loads [Mink](https://mink.behat.org/) Selenium2Driver args from a YAML file
+  - Allows subclasses to declare it's use of a a device profile like `'small_mobile'` or `'desktop'` via `getDeviceProfileKey()`
 - Base class (`DeviceProfileTestBase`) that:
   - Loads custom Selenium2Driver capabilities from a YAML config file
-  - Allows subclasses to declare a target device profile (`getDeviceProfileKey()`)
-  - Works with DTT’s `ExistingSiteSelenium2DriverTestBase`
+- Includes `DesktopTestBase` and `MobileTestBase` ready to use
+- Built on top of `ExistingSiteSelenium2DriverTestBase` from DTT
 - Compatible with Composer-based Drupal installs
+- Avoids test logic pollution like `if (mobile)` inside a shared test
 - Supports fallback default profiles
 
 ---
 
-## 💡 Why This Exists
+## 💡 Why Not Just Use PHPUnit Configs?
 
-Drupal Test Traits (DTT) allows browser testing using Selenium, but all tests run in a single environment defined via env vars or `phpunit.xml`.
+Multiple configs or CI matrixes **run the same tests in different environments** — but they **can’t change behavior per test class**.
 
-That’s fine for:
+This library allows distinct classes like:
 
-- “Run all tests in Chrome”
-- “Run the same test in Firefox, too”
+* `GenerateCaptionsMobileTest` to assert mobile-only behavior
+* `GenerateCaptionsDesktopTest` to assert desktop-only UI
 
-But it **doesn’t allow** writing a test like:
+That's fine for:
+
+- "Run all tests in Chrome"
+- "Run the same test in Firefox, too"
+
+But it **doesn't allow** writing a test like:
 
 ```php
 class HomepageDesktopTest extends DesktopTestBase
 class HomepageMobileTest extends MobileTestBase
 ```
 
-### "Why not just use multiple PHPUnit configs or CI matrix?"
-
-That approach can run the same test suite in different environments but it can't let a single test class declare its device context and behave differently.
+These aren't alternate environments. They're **different tests** with different expectations.
 
 Consider this use case:
 
@@ -60,23 +76,57 @@ They are different tests with different expectations. Running the same class in 
 
     * Or make the test logic messier with branching like if (MOBILE) {...}
 
-
 ## Installation
 
-Install as a custom Drupal module (in `modules/custom` or `modules/contrib`):
+### Require the Library
 
+Until it's released on Packagist, use the VCS method.
 
-Here's a clearer, more structured rewrite of the **Configuration** section for your README:
+in composer.json:
+```json
+{
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/thursdaybw/dtt_multi_device_test_base"
+    }
+  ],
+}
+```
+
+Then:
+
+```bash
+composer require --dev thursdaybw/dtt_multi_device_test_base:dev-main
+```
+
+---
+## 🧩 Dependencies
+
+This module assumes you're already using [Drupal Test Traits (DTT)](https://github.com/weitzman/drupal-test-traits) and have it fully configured.
 
 ---
 
 ## ⚙️ Configuration
 
-This module assumes you're already using [Drupal Test Traits (DTT)](https://github.com/weitzman/drupal-test-traits) and have it fully configured.
+### 1. Ensure You're Using DTT's `bootstrap.php`
 
-### 1. Set the Device Profile YAML Path
+You **must use DTT’s full bootstrap**, *not* `bootstrap-fast.php`, in your `phpunit.dtt.xml`:
 
-In your `phpunit.xml` (usually in your project root), define the path to your device profile YAML:
+```xml
+<phpunit bootstrap="vendor/weitzman/drupal-test-traits/src/bootstrap.php">
+```
+
+🚫 `bootstrap-fast.php` is faster but skips full autoloading, which will break test class discovery for this module.
+
+⚠️ bootstrap-fast.php may work but autoloading with boostrap-fast.php is untested.
+---
+
+The default file (`device_profiles.default.yaml`) is included, but you can create your own like this:
+
+### 2. (optional) Configure the Device Profile YAML Path
+
+In your `phpunit.xml` or `phpunit.dtt.xml`:
 
 ```xml
 <php>
@@ -84,14 +134,14 @@ In your `phpunit.xml` (usually in your project root), define the path to your de
 </php>
 ```
 
-✅ **Recommended:** Use a **full absolute path**
-Relative paths are unreliable due to quirks in PHPUnit’s working directory (`getcwd()`) and may break depending on how tests are invoked (e.g. via IDE, shell, or CI).
+✅ **Use a full path.**
+Relative paths to the project root do work but are flaky and PHPUnit may change the working directory under the hood, especially in IDEs or CI.
 
 ---
 
-### 2. Create Your Device Profile YAML File
+### 2. (optional) Create Your YAML Config
 
-Place your `dtt_device_profiles.yaml` in the project root (alongside `phpunit.xml` and `composer.json`). Example:
+Example `dtt_device_profiles.yaml`:
 
 ```yaml
 small_mobile:
@@ -108,38 +158,44 @@ desktop:
   - "http://selenium-chrome:4444/wd/hub"
 ```
 
-✅ A fallback file (`device_profiles.default.yaml`) is bundled in this repo, but it’s not maintained.
-Copy and customize your own YAML config.
-
 ---
-
-### 3. Ensure You're Using DTT's `bootstrap.php`
-
-You **must use DTT’s full bootstrap**, *not* `bootstrap-fast.php`, in your `phpunit.dtt.xml`:
-
-```xml
-<phpunit bootstrap="vendor/weitzman/drupal-test-traits/src/bootstrap.php">
-```
-
-🚫 `bootstrap-fast.php` is faster but skips full autoloading, which will break test class discovery for this module.
-
-⚠️ bootstrap-fast.php may work but autoloading with boostrap-fast.php is untested.
----
-
-## 🧩 Dependencies
-
-You **must onfigure [weitzman/drupal-test-traits](https://github.com/weitzman/drupal-test-traits)** for this module to function.
 
 ## Usage
 
-Extend DeviceProfileTestBase in your test classes:
+
+Extend the provided base classes that use the default config:
 
 ```php
-use Drupal\Tests\dtt_multi_device_test_base\ExistingSiteJavascript\Base\DeviceProfileTestBase;
+use thursdaybw\DttMultiDeviceTestBase\MobileTestBase;
+
+class HomepageMobileTest extends MobileTestBase {
+  public function testMobileNav() {
+    $this->visit('/');
+    $this->assertSession()->elementNotExists('css', '.desktop-nav');
+  }
+}
+```
+
+```phpy
+use thursdaybw\DttMultiDeviceTestBase\DesktopTestBase;
+
+class HomepageDesktopTest extends DesktopTestBase {
+  public function testDesktopNav() {
+    $this->visit('/');
+    $this->assertSession()->elementExists('css', '.desktop-nav');
+  }
+}
+```
+
+or Extend DeviceProfileTestBase in your test classes to use your own config:
+
+
+```php
+use thursdaybw\DttMultiDeviceTestBase\DeviceProfieTestBase;
 
 class MyMobileTest extends DeviceProfileTestBase {
   protected function getDeviceProfileKey(): string {
-    return 'small_mobile';
+    return 'small_mobile'; # or whatever name you defined in your own yaml config
   }
 
   public function testMobileStuff() {
