@@ -1,5 +1,5 @@
 <?php
-namespace thursdaybw\DttMultiDeviceTestBase\Base;
+namespace thursdaybw\DttMultiDeviceTestBase;
 
 use Drupal\Component\Serialization\Yaml;
 use weitzman\DrupalTestTraits\ExistingSiteSelenium2DriverTestBase;

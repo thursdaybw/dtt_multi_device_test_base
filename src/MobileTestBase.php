@@ -1,5 +1,5 @@
 <?php
-namespace thursdaybw\DttMultiDeviceTestBase\Base;
+namespace thursdaybw\DttMultiDeviceTestBase;
 
 class MobileTestBase extends DeviceProfileTestBase {
   protected function getDeviceProfileKey(): string {
